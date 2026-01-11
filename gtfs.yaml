@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: OpenTripPlanner (OTP) GraphQL API
+  description: OpenTripPlanner 2.x 기반의 대중교통 라우팅 API입니다.
+  version: 1.0.0
+servers:
+  - url: https://api.yhs.kr
+    description: Production server
+tags: []
+paths:
+  "/otp/transmodel/v3":
+    post:
+      summary: 대중교통 경로 탐색
+      operationId: getTripPlan
+      description: |
+        GraphQL 엔드포인트로 `trip` 쿼리를 전송하여 경로 계획을 요청합니다. 
+        제공된 쿼리와 변수 구조에 맞추어 스키마가 정의되었습니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: "The GraphQL query string"
+                  example: |
+                    query trip($dateTime: DateTime, $from: Location!, $modes: Modes, $pageCursor: String, $to: Location!) {
+                      trip(dateTime: $dateTime, from: $from, modes: $modes, pageCursor: $pageCursor, numTripPatterns: 1, to: $to) { 
+                        previousPageCursor
+                        nextPageCursor
+                        tripPatterns {
+                          aimedStartTime, 
+                          aimedEndTime,
+                          duration,
+                          distance,
+                          legs { id, mode, distance, duration, aimedStartTime, aimedEndTime, fromPlace { name }, toPlace { name }, line { publicCode, name, id }}
+                        }
+                      }
+                    }
+                operationName:
+                  type: string
+                  description: "Always enter ‘trip’."
+                  example: "trip"
+                variables:
+                  type: string
+                  description: "A value containing variable data structured in JSON format. 
+                  Below is a description of the keys that configure “variable”
+                  * from: Departure point (departure station or stop) based WGS84
+                  * to: Destination point (arrival station or stop) based WGS84
+                  * dateTime: The time at which departure occurs from the departure point toward the arrival point. Time is based on Pacific Standard Time. Unless otherwise specified, always enter the current time."
+                  example: "{\"dateTime\": \"2026-01-11T08:31:33.937Z\", \"from\": {\"coordinates\": {\"latitude\": 37.61848712954218, \"longitude\": 127.07537082776615}}, \"to\": {\"coordinates\": {\"latitude\": 37.61848712954218, \"longitude\": 127.07537082776615}}}"
+      responses:
+        '200':
+          description: Successful Trip Plan Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TripData'
+
+components:
+  schemas:
+    TripData:
+      type: object
+      properties:
+        previousPageCursor:
+          type: string
+        nextPageCursor:
+          type: string
+        tripPatterns:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripPattern'
+
+    TripPattern:
+      type: object
+      properties:
+        aimedStartTime:
+          type: string
+          description: "The aimed date and time the trip starts."
+          example: "2026-01-11T08:31:33.937Z"
+        aimedEndTime:
+          type: string
+          description: "The aimed date and time the trip ends."
+          example: "2026-01-11T08:31:33.937Z"
+        expectedStartTime:
+          type: string
+          description: "The expected, real-time adjusted date and time the trip starts."
+          example: "2026-01-11T08:31:33.937Z"
+        expectedEndTime:
+          type: string
+          description: "The expected, real-time adjusted date and time the trip ends."
+          example: "2026-01-11T08:31:33.937Z"
+        distance:
+          type: string
+          description: "Total distance for the trip, in meters."
+        duration:
+          type: string
+          description: "Duration of the trip, in seconds."
+        legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Leg'
+
+    Leg:
+      type: object
+      properties:
+        id:
+          type: string
+        mode:
+          type: string
+          enum: [ air, bicycle, bus, cableway, car, carpool, coach, foot, funicular, lift, metro, monorail, rail, scooter, snowAndIce, taxi, tram, trolleybus, water, unknown ]
+          description: "The mode of transport or access (e.g., foot) used when traversing"
+        aimedStartTime:
+          type: string
+          description: "The aimed date and time the leg starts."
+          example: "2026-01-11T08:31:33.937Z"
+        aimedEndTime:
+          type: string
+          description: "The aimed date and time the leg ends."
+          example: "2026-01-11T08:31:33.937Z"
+        expectedStartTime:
+          type: string
+          description: "The expected, real-time adjusted date and time the leg starts."
+          example: "2026-01-11T08:31:33.937Z"
+        expectedEndTime:
+          type: string
+          description: "The expected, real-time adjusted date and time the leg ends."
+          example: "2026-01-11T08:31:33.937Z"
+        realtime:
+          type: string
+          description: "Whether there is real-time data about this leg"
+        distance:
+          type: string
+          description: "The distance traveled while traversing the leg in meters."
+        duration:
+          type: string
+          description: "The leg's duration in seconds"
+        fromPlace:
+          $ref: '#/components/schemas/Place'
+        toPlace:
+          $ref: '#/components/schemas/Place'
+        toEstimatedCall:
+          type: object
+          properties:
+            destinationDisplay:
+              type: object
+              properties:
+                frontText:
+                  type: string
+        line:
+          $ref: '#/components/schemas/Line'
+        authority:
+          $ref: '#/components/schemas/Authority'
+        pointsOnLink:
+          type: object
+          properties:
+            points:
+              type: string
+              description: "Encoded polyline string"
+        interchangeTo:
+          type: object
+          properties:
+            staySeated:
+              type: string
+        interchangeFrom:
+          type: object
+          properties:
+            staySeated:
+              type: string
+
+    Place:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "For transit quays, the name of the quay. For points of interest, the name of the POI."
+        quay:
+          type: object
+          properties:
+            id:
+              type: string
+          description: "The quay related to the place."
+
+    Line:
+      type: object
+      description: "For ride legs, the line. For non-ride legs, null."
+      properties:
+        id:
+          type: string
+        publicCode:
+          description: "Publicly announced code for line, differentiating it from other lines for the same operator."
+          type: string
+        name:
+          type: string
+        presentation:
+          type: object
+          properties:
+            colour:
+              type: string
+
+    Authority:
+      description: "For ride legs, the service authority used for this legs. For non-ride legs, null."
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
