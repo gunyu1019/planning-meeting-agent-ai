@@ -18,7 +18,8 @@ Therefore, all parameters—‘query’, ‘operationName’, and ‘variables�
 
 Fill in the ‘query’ parameter as follows.
 
-Query Parameter: """
+Query Parameter: 
+```graphql
 query trip($dateTime: DateTime, $from: Location!, $modes: Modes, $pageCursor: String, $to: Location!) {
                       trip(dateTime: $dateTime, from: $from, modes: $modes, pageCursor: $pageCursor, numTripPatterns: 50, to: $to) { 
                         previousPageCursor
@@ -32,14 +33,16 @@ query trip($dateTime: DateTime, $from: Location!, $modes: Modes, $pageCursor: St
                         }
                       }
 }
-"""
+
+```
 
 Always set the ‘operationName’ parameter to ‘trip’. 
 
 Modify and fill in the “variable” parameter by referencing the example below.
 The variable is structured in JSON format and is converted to a string.
 
-Variable Parameter: """
+Variable Parameter: 
+```json
 "variable": {
   "from": {
     "coordinates": {
@@ -55,7 +58,7 @@ Variable Parameter: """
   },
   "dateTime": "2026-01-11T08:31:33.937Z",
 }
-"""
+```
 
 Below is a description of the keys that configure “variable”
 * from: Departure point (departure station or stop)
@@ -63,7 +66,7 @@ Below is a description of the keys that configure “variable”
 * dateTime: The time at which departure occurs from the departure point toward the arrival point. Time is based on Pacific Standard Time. Unless otherwise specified, always enter the current date and current time.
 
 The results received from the “대중교통 경로 탐색” are similar to the below.
-"""
+```json
 {
     "data": {
         "trip": {
@@ -98,7 +101,7 @@ The results received from the “대중교통 경로 탐색” are similar to th
         }
     }
 }
-"""
+```
 
 ======================================================================================
 
